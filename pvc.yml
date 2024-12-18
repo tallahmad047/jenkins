@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-jenkins
+  namespace: artp-devops
+spec:
+  storageClassName: "standard"
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi

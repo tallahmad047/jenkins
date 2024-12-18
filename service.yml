@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service-jnlp
+  namespace: artp-devops
+  labels:
+    app: jenkins
+    criticity: high
+spec:
+  selector:
+    app: jenkins-server
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: jenkins-http-interne
+  - port: 50000
+    targetPort: 50000
+    name: jenkins-jnlp
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service-http
+  namespace: artp-devops
+  labels:
+    app: jenkins
+    criticity: high
+spec:
+  selector:
+    app: jenkins-server
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 32001
+    name: jenkins-url
