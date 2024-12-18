@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: postgres
+  name: postgres
+  namespace: devops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+      namespace: devops
+    spec:
+      containers:
+      - image: postgres:14
+        name: postgres
+        resources:
+          limits:
+            cpu: 400m
+            memory: 400Mi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        env:
+        - name: PGDATA
+          valueFrom:
+            configMapKeyRef:
+              name: cm-devops
+              key: pg_data
+        - name: POSTGRES_DB
+          value: sonarqube
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-devops
+              key: password
+        volumeMounts:
+        - name: pvc-pg
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: pvc-pg
+        persistentVolumeClaim:
+          claimName: pvc-pg

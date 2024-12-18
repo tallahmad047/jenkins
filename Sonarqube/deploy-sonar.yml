@@ -1,0 +1,60 @@
+kind: Deployment
+metadata:
+  labels:
+    app: sonarqube
+  name: sonarqube
+  namespace: devops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+      namespace: devops
+    spec:
+      containers:
+      - image: sonarqube:lts-community
+        name: sonarqube
+        resources:
+          limits:
+            cpu: 400m
+            memory: 3Gi
+          requests:
+            cpu: 200m
+            memory: 200Mi
+        env:
+        - name: SONAR_JDBC_URL
+          valueFrom:
+            configMapKeyRef:
+              name: cm-devops
+              key: jdbc_url
+        - name: SONAR_JDBC_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: cm-devops
+              key: pg_username
+        - name: SONAR_JDBC_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: secret-devops
+              key: password
+        volumeMounts:
+        - name: pvc-sonar-data
+          mountPath: /opt/sonarqube/data
+        - name: pvc-sonar-extensions
+          mountPath: /opt/sonarqube/extensions
+        - name: pvc-sonar-logs
+          mountPath: /opt/sonarqube/logs
+      volumes:
+      - name: pvc-sonar-data
+        persistentVolumeClaim:
+          claimName: pvc-sonar-data
+      - name: pvc-sonar-extensions
+        persistentVolumeClaim:
+          claimName: pvc-sonar-extensions
+      - name: pvc-sonar-logs
+        persistentVolumeClaim:
+          claimName: pvc-sonar-logs
