@@ -1,0 +1,60 @@
+pipeline {
+    agent any 
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('tall-dockerhub')
+    }
+    stages { 
+        stage('SCM Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/tallahmad047/nodejsdemo.git'
+            }
+        }
+        stage('Build docker image') {
+            steps {  
+                bat 'docker build -t tallahmad/nodetest:%BUILD_NUMBER% .'
+            }
+        }
+        stage('Login to DockerHub') {
+            steps {
+                bat '''
+                    echo %DOCKERHUB_CREDENTIALS_PSW%| docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin
+                '''
+            }
+        }
+        stage('Push image') {
+            steps {
+                bat 'docker push tallahmad/nodetest:%BUILD_NUMBER%'
+            }
+        }
+        stage('Prepare deployment file') {
+            steps {
+                script {
+                    def deploymentFile = readFile('deployment.yaml')
+                    def updatedFile = deploymentFile.replace('${BUILD_NUMBER}', env.BUILD_NUMBER)
+                    writeFile file: 'deployment.yaml', text: updatedFile
+                }
+            }
+        }
+        stage('Deploying App to Kubernetes') {
+            steps {
+                script {
+                    if (fileExists('deployment.yaml')) {
+                        echo 'Fichier deployment.yaml mis à jour trouvé. Déploiement en cours...'
+                        kubernetesDeploy(
+                            configs: "deployment.yaml",
+                            kubeconfigId: "kubernetes",
+                            enableConfigSubstitution: true
+                        )
+                    } else {
+                        error('Fichier deployment.yaml introuvable.')
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            bat 'docker logout'
+        }
+    }
+}
